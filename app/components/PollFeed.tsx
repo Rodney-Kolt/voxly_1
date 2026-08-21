@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { collection, query, where, orderBy, onSnapshot, Timestamp } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { Poll } from '@/lib/firestore'
@@ -13,15 +13,26 @@ interface PollFeedProps {
   className?: string
 }
 
+// In-memory cache for instant loading
+const pollCache = new Map<FilterType, Poll[]>()
+
 export const PollFeed: React.FC<PollFeedProps> = ({ className = '' }) => {
   const [filter, setFilter] = useState<FilterType>('all')
   const [polls, setPolls] = useState<Poll[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const hasShownCacheRef = useRef(false)
 
   // Subscribe to polls with real-time updates
   useEffect(() => {
-    setLoading(true)
+    // Show cached polls instantly (if they exist)
+    if (pollCache.has(filter)) {
+      setPolls(pollCache.get(filter) || [])
+      hasShownCacheRef.current = true
+    } else {
+      setLoading(true)
+    }
+    
     setError(null)
 
     let pollQuery
@@ -90,13 +101,22 @@ export const PollFeed: React.FC<PollFeedProps> = ({ className = '' }) => {
           pollsData.sort((a, b) => (b.totalVotes || 0) - (a.totalVotes || 0))
         }
 
+        // Cache the results for instant loading on next visit
+        pollCache.set(filter, pollsData)
+        
         setPolls(pollsData)
         setLoading(false)
       },
       (err) => {
         console.error('Error fetching polls:', err)
-        setError('Failed to load polls. Please try again.')
-        setLoading(false)
+        // If cache exists, use it instead of showing error
+        if (pollCache.has(filter)) {
+          setPolls(pollCache.get(filter) || [])
+          setLoading(false)
+        } else {
+          setError('Failed to load polls. Please try again.')
+          setLoading(false)
+        }
       }
     )
 
