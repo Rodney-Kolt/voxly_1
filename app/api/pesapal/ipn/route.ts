@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getFirestore, Timestamp, doc, updateDoc, setDoc, getDoc } from 'firebase-admin/firestore'
-import { initializeApp } from 'firebase-admin/app'
 import {
   getTransactionStatus,
   parseMerchantReference,
@@ -14,10 +12,9 @@ try {
   adminApp = require('firebase-admin').app()
 } catch (error) {
   if (process.env.FIREBASE_ADMIN_PROJECT_ID) {
-    adminApp = initializeApp({
+    const admin = require('firebase-admin')
+    adminApp = admin.initializeApp({
       projectId: process.env.FIREBASE_ADMIN_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_ADMIN_PRIVATE_KEY?.replace(/\\n/g, '\n'),
     })
   }
 }
@@ -59,7 +56,8 @@ export async function GET(request: NextRequest) {
       throw new Error('Firebase Admin not initialized')
     }
 
-    const db = getFirestore(adminApp)
+    const admin = require('firebase-admin')
+    const db = admin.firestore(adminApp)
 
     // Check if payment already exists (idempotency)
     const paymentsRef = await db.collection('payments').where('pesapalOrderTrackingId', '==', orderTrackingId).limit(1).get()
@@ -70,10 +68,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Get poll to verify it exists
-    const pollRef = doc(db, 'polls', pollId)
-    const pollDoc = await getDoc(pollRef)
+    const pollDoc = await db.collection('polls').doc(pollId).get()
 
-    if (!pollDoc.exists()) {
+    if (!pollDoc.exists) {
       console.error('Poll not found')
       return NextResponse.json({ status: 'OK' })
     }
@@ -82,15 +79,14 @@ export async function GET(request: NextRequest) {
     const boostedUntil = getBoostExpirationTime()
 
     // Update poll with boost information
-    await updateDoc(pollRef, {
+    await db.collection('polls').doc(pollId).update({
       isBoosted: true,
-      boostedUntil: Timestamp.fromDate(boostedUntil),
+      boostedUntil: admin.firestore.Timestamp.fromDate(boostedUntil),
       boostedBy: userId,
     })
 
     // Record payment in payments collection
-    const paymentRef = doc(db, 'payments', `${userId}_${pollId}_${orderTrackingId}`)
-    await setDoc(paymentRef, {
+    await db.collection('payments').doc(`${userId}_${pollId}_${orderTrackingId}`).set({
       userId,
       pollId,
       provider: 'pesapal',
@@ -100,8 +96,8 @@ export async function GET(request: NextRequest) {
       pesapalOrderTrackingId: orderTrackingId,
       pesapalMerchantReference: orderMerchantReference,
       paymentMethod: transactionStatus.paymentMethod || 'unknown',
-      createdAt: Timestamp.now(),
-      boostedUntil: Timestamp.fromDate(boostedUntil),
+      createdAt: admin.firestore.Timestamp.now(),
+      boostedUntil: admin.firestore.Timestamp.fromDate(boostedUntil),
     })
 
     console.log(`Payment processed successfully for poll ${pollId}`)
@@ -152,7 +148,8 @@ export async function POST(request: NextRequest) {
       throw new Error('Firebase Admin not initialized')
     }
 
-    const db = getFirestore(adminApp)
+    const admin = require('firebase-admin')
+    const db = admin.firestore(adminApp)
 
     // Check if payment already exists (idempotency)
     const paymentsRef = await db.collection('payments').where('pesapalOrderTrackingId', '==', orderTrackingId).limit(1).get()
@@ -163,10 +160,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify poll exists
-    const pollRef = doc(db, 'polls', pollId)
-    const pollDoc = await getDoc(pollRef)
+    const pollDoc = await db.collection('polls').doc(pollId).get()
 
-    if (!pollDoc.exists()) {
+    if (!pollDoc.exists) {
       console.error('Poll not found')
       return NextResponse.json({ status: 'OK' })
     }
@@ -175,15 +171,14 @@ export async function POST(request: NextRequest) {
     const boostedUntil = getBoostExpirationTime()
 
     // Update poll
-    await updateDoc(pollRef, {
+    await db.collection('polls').doc(pollId).update({
       isBoosted: true,
-      boostedUntil: Timestamp.fromDate(boostedUntil),
+      boostedUntil: admin.firestore.Timestamp.fromDate(boostedUntil),
       boostedBy: userId,
     })
 
     // Record payment
-    const paymentRef = doc(db, 'payments', `${userId}_${pollId}_${orderTrackingId}`)
-    await setDoc(paymentRef, {
+    await db.collection('payments').doc(`${userId}_${pollId}_${orderTrackingId}`).set({
       userId,
       pollId,
       provider: 'pesapal',
@@ -193,8 +188,8 @@ export async function POST(request: NextRequest) {
       pesapalOrderTrackingId: orderTrackingId,
       pesapalMerchantReference: orderMerchantReference,
       paymentMethod: transactionStatus.paymentMethod || 'unknown',
-      createdAt: Timestamp.now(),
-      boostedUntil: Timestamp.fromDate(boostedUntil),
+      createdAt: admin.firestore.Timestamp.now(),
+      boostedUntil: admin.firestore.Timestamp.fromDate(boostedUntil),
     })
 
     console.log(`Payment processed successfully for poll ${pollId}`)

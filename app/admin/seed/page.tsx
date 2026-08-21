@@ -7,7 +7,6 @@ import {
   collection,
   addDoc,
   serverTimestamp,
-  Timestamp,
 } from 'firebase/firestore'
 import { useRouter } from 'next/navigation'
 

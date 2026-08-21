@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { initializeApp, cert } from 'firebase-admin/app'
-import { getAuth as getAdminAuth } from 'firebase-admin/auth'
 import {
   generateMerchantReference,
   submitOrder,
@@ -17,10 +15,9 @@ try {
 } catch (error) {
   // If no app exists, create one
   if (process.env.FIREBASE_ADMIN_PROJECT_ID) {
-    adminApp = initializeApp({
+    const admin = require('firebase-admin')
+    adminApp = admin.initializeApp({
       projectId: process.env.FIREBASE_ADMIN_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_ADMIN_PRIVATE_KEY?.replace(/\\n/g, '\n'),
     })
   }
 }
@@ -44,13 +41,15 @@ export async function POST(request: NextRequest) {
 
     // Verify the token with Firebase Admin SDK
     let userId: string
+    let decodedToken: any
     try {
       if (!adminApp) {
         throw new Error('Firebase Admin not initialized')
       }
 
-      const auth = getAdminAuth(adminApp)
-      const decodedToken = await auth.verifyIdToken(idToken)
+      const admin = require('firebase-admin')
+      const auth = admin.auth(adminApp)
+      decodedToken = await auth.verifyIdToken(idToken)
       userId = decodedToken.uid
     } catch (error) {
       console.error('Token verification failed:', error)
@@ -76,9 +75,9 @@ export async function POST(request: NextRequest) {
       merchantReference,
       redirectUrl,
       callbackUrl,
-      billingFirstName: decodedToken?.name?.split(' ')[0] || 'User',
-      billingLastName: decodedToken?.name?.split(' ')[1] || '',
-      billingEmail: decodedToken?.email || '',
+      billingFirstName: decodedToken.name?.split(' ')[0] || 'User',
+      billingLastName: decodedToken.name?.split(' ')[1] || '',
+      billingEmail: decodedToken.email || '',
     })
 
     return NextResponse.json({
