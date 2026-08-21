@@ -1,10 +1,9 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useTransition } from 'react'
 import { useAuth } from '@/app/context/AuthContext'
 import {
   postComment,
-  getComments,
   subscribeToComments,
   deleteComment,
   Comment as CommentType,
@@ -17,33 +16,18 @@ interface CommentsSectionProps {
 
 export const CommentsSection: React.FC<CommentsSectionProps> = ({ pollId }) => {
   const { user } = useAuth()
+  const [isPending, startTransition] = useTransition()
   const [comments, setComments] = useState<CommentType[]>([])
   const [body, setBody] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  // Load initial comments
+  // Subscribe to real-time comment updates (also handles initial load)
   useEffect(() => {
-    const fetchComments = async () => {
-      try {
-        setLoading(true)
-        const initialComments = await getComments(pollId)
-        setComments(initialComments)
-      } catch (err) {
-        console.error('Error fetching comments:', err)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchComments()
-  }, [pollId])
-
-  // Subscribe to real-time comment updates
-  useEffect(() => {
+    setLoading(true)
     const unsubscribe = subscribeToComments(pollId, (updatedComments) => {
       setComments(updatedComments)
+      setLoading(false)  // Mark loading complete when first batch arrives
     })
 
     return () => unsubscribe()
@@ -62,17 +46,23 @@ export const CommentsSection: React.FC<CommentsSectionProps> = ({ pollId }) => {
       return
     }
 
-    try {
-      setIsSubmitting(true)
-      setError('')
+    const commentText = body.trim()
+    
+    // Optimistic update: immediately clear input for good UX
+    setBody('')
+    setError('')
 
-      await postComment(pollId, body.trim())
-      setBody('')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to post comment')
-    } finally {
-      setIsSubmitting(false)
-    }
+    startTransition(async () => {
+      try {
+        // Send comment to server
+        await postComment(pollId, commentText)
+        // Comment will appear via subscription when server confirms
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to post comment')
+        // Revert optimistic update if submission fails
+        setBody(commentText)
+      }
+    })
   }
 
   const handleDeleteComment = async (commentId: string) => {
@@ -115,15 +105,23 @@ export const CommentsSection: React.FC<CommentsSectionProps> = ({ pollId }) => {
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary resize-none"
                 rows={3}
                 maxLength={500}
+                disabled={isPending}
               />
               <div className="flex items-center justify-between mt-2">
                 <p className="text-xs text-gray-500">{body.length}/500</p>
                 <button
                   type="submit"
-                  disabled={isSubmitting || !body.trim()}
-                  className="px-4 py-2 bg-gradient-primary text-white rounded-lg font-medium hover:opacity-90 transition disabled:opacity-50"
+                  disabled={isPending || !body.trim()}
+                  className="px-4 py-2 bg-gradient-primary text-white rounded-lg font-medium hover:opacity-90 transition disabled:opacity-50 flex items-center gap-2"
                 >
-                  {isSubmitting ? 'Posting...' : 'Post Comment'}
+                  {isPending ? (
+                    <>
+                      <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
+                      Posting...
+                    </>
+                  ) : (
+                    'Post Comment'
+                  )}
                 </button>
               </div>
             </div>
@@ -138,20 +136,24 @@ export const CommentsSection: React.FC<CommentsSectionProps> = ({ pollId }) => {
       {/* Comments List */}
       {loading ? (
         <div className="space-y-4">
-          {Array(3).fill(null).map((_, i) => (
-            <div key={i} className="animate-pulse">
-              <div className="flex gap-4">
-                <div className="w-10 h-10 bg-gray-200 rounded-full flex-shrink-0" />
-                <div className="flex-1">
-                  <div className="h-4 bg-gray-200 rounded w-1/4 mb-2" />
-                  <div className="h-3 bg-gray-200 rounded w-full" />
+          {Array(3)
+            .fill(null)
+            .map((_, i) => (
+              <div key={i} className="animate-pulse">
+                <div className="flex gap-4">
+                  <div className="w-10 h-10 bg-gray-200 rounded-full flex-shrink-0" />
+                  <div className="flex-1">
+                    <div className="h-4 bg-gray-200 rounded w-1/4 mb-2" />
+                    <div className="h-3 bg-gray-200 rounded w-full" />
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
         </div>
       ) : comments.length === 0 ? (
-        <p className="text-center text-gray-500 py-8">No comments yet. Be the first to share your thoughts!</p>
+        <p className="text-center text-gray-500 py-8">
+          No comments yet. Be the first to share your thoughts!
+        </p>
       ) : (
         <div className="space-y-6">
           {comments.map((comment) => (

@@ -206,9 +206,12 @@ export async function getAllPolls(limitCount: number = 50): Promise<Poll[]> {
     const snapshot = await getDocs(q)
     const polls: Poll[] = []
 
-    for (const doc of snapshot.docs) {
+    // Fetch all vote counts in parallel instead of sequentially (fixes N+1 query issue)
+    const voteCountsPromises = snapshot.docs.map((doc) => getVoteCount(doc.id))
+    const voteCounts = await Promise.all(voteCountsPromises)
+
+    snapshot.docs.forEach((doc, index) => {
       const data = doc.data()
-      const voteCount = await getVoteCount(doc.id)
       polls.push({
         id: doc.id,
         userId: data.userId,
@@ -217,9 +220,9 @@ export async function getAllPolls(limitCount: number = 50): Promise<Poll[]> {
         imageUrl: data.imageUrl,
         closesAt: data.closesAt,
         createdAt: data.createdAt,
-        totalVotes: voteCount,
+        totalVotes: voteCounts[index],
       })
-    }
+    })
 
     return polls
   } catch (error) {

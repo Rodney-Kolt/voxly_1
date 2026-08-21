@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useTransition } from 'react'
 import { useAuth } from '@/app/context/AuthContext'
 import {
   Poll,
@@ -19,31 +19,33 @@ interface PollVotingProps {
 
 export const PollVoting: React.FC<PollVotingProps> = ({ poll }) => {
   const { user } = useAuth()
+  const [isPending, startTransition] = useTransition()
   const [userVote, setUserVote] = useState<Vote | null>(null)
   const [voteCounts, setVoteCounts] = useState<number[]>(
     new Array(poll.options.length).fill(0)
   )
-  const [loadingVote, setLoadingVote] = useState(false)
+  const [pendingVote, setPendingVote] = useState<number | null>(null)
   const [error, setError] = useState('')
-  const [selectedOption, setSelectedOption] = useState<number | null>(null)
 
   const totalVotes = voteCounts.reduce((a, b) => a + b, 0)
   const isClosed = isPollClosed(poll.closesAt)
   const hasVoted = userVote !== null
 
-  // Fetch user's vote and vote counts
+  // Batch fetch user vote and vote counts in parallel
   useEffect(() => {
     const fetchData = async () => {
       if (!user) return
 
       try {
-        const vote = await getUserVoteForPoll(poll.id, user.uid)
+        const [vote, counts] = await Promise.all([
+          getUserVoteForPoll(poll.id, user.uid),
+          getVotesByOption(poll.id)
+        ])
+        
         setUserVote(vote)
-
-        const counts = await getVotesByOption(poll.id)
         setVoteCounts(counts)
       } catch (err) {
-        console.error('Error fetching voting data:', error)
+        console.error('Error fetching voting data:', err)
       }
     }
 
@@ -72,25 +74,28 @@ export const PollVoting: React.FC<PollVotingProps> = ({ poll }) => {
       return
     }
 
-    try {
-      setLoadingVote(true)
-      setError('')
-      setSelectedOption(optionIndex)
+    // Optimistic update: immediately update UI
+    setPendingVote(optionIndex)
+    setError('')
 
-      await castVote(poll.id, optionIndex)
-      setUserVote({
-        id: `temp-${Date.now()}`,
-        pollId: poll.id,
-        userId: user.uid,
-        optionIndex,
-        createdAt: new Date() as any,
-      })
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to vote')
-      setSelectedOption(null)
-    } finally {
-      setLoadingVote(false)
-    }
+    startTransition(async () => {
+      try {
+        // Send vote to server
+        await castVote(poll.id, optionIndex)
+        
+        // Update state after successful submission
+        setUserVote({
+          id: `temp-${Date.now()}`,
+          pollId: poll.id,
+          userId: user.uid,
+          optionIndex,
+          createdAt: new Date() as any,
+        })
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to vote')
+        setPendingVote(null)
+      }
+    })
   }
 
   const getPercentage = (votes: number) => {
@@ -99,7 +104,7 @@ export const PollVoting: React.FC<PollVotingProps> = ({ poll }) => {
   }
 
   // Show results if poll is closed or user has voted
-  const showResults = isClosed || hasVoted
+  const showResults = isClosed || hasVoted || pendingVote !== null
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-8">
@@ -117,6 +122,12 @@ export const PollVoting: React.FC<PollVotingProps> = ({ poll }) => {
             <span className="font-semibold">You have voted on this poll</span>
           </div>
         )}
+        {isPending && (
+          <div className="flex items-center gap-2 p-4 bg-blue-50 border border-blue-200 rounded-lg text-blue-700">
+            <div className="animate-spin w-4 h-4 border-2 border-blue-300 border-t-blue-700 rounded-full" />
+            <span className="font-semibold">Submitting vote...</span>
+          </div>
+        )}
       </div>
 
       {/* Error Message */}
@@ -131,14 +142,14 @@ export const PollVoting: React.FC<PollVotingProps> = ({ poll }) => {
         {poll.options.map((option, index) => {
           const votes = voteCounts[index] || 0
           const percentage = getPercentage(votes)
-          const isSelected = userVote?.optionIndex === index
-          const isHovering = selectedOption === index
+          const isSelected = userVote?.optionIndex === index || pendingVote === index
+          const isLoading = isPending
 
           return (
             <button
               key={index}
               onClick={() => handleVote(index)}
-              disabled={showResults || loadingVote || !user}
+              disabled={showResults || isLoading || !user}
               className={`relative w-full text-left overflow-hidden rounded-lg transition-all ${
                 showResults || !user
                   ? 'cursor-default'
@@ -169,18 +180,18 @@ export const PollVoting: React.FC<PollVotingProps> = ({ poll }) => {
                 </div>
                 {isSelected && (
                   <div className="ml-4">
-                    <CheckCircle size={24} className="text-primary" />
+                    {isLoading ? (
+                      <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full" />
+                    ) : (
+                      <CheckCircle size={24} className="text-primary" />
+                    )}
                   </div>
                 )}
               </div>
 
               {/* Hover effect for voting */}
-              {!showResults && !loadingVote && (
-                <div
-                  className={`absolute inset-0 bg-blue-50 transition-opacity ${
-                    isHovering ? 'opacity-100' : 'opacity-0'
-                  }`}
-                />
+              {!showResults && !isLoading && (
+                <div className="absolute inset-0 bg-blue-50 opacity-0 hover:opacity-100 transition-opacity" />
               )}
             </button>
           )

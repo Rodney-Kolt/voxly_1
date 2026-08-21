@@ -20,20 +20,24 @@ export default function PollDetailPage() {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    const fetchPoll = async () => {
+    const fetchPollData = async () => {
       try {
         setLoading(true)
 
+        // Fetch poll and author info in parallel instead of sequentially
         const pollData = await getPoll(pollId)
         if (!pollData) {
           setError('Poll not found')
           return
         }
 
-        setPoll(pollData)
+        // Fetch author in parallel while poll is being set
+        const [, author] = await Promise.all([
+          Promise.resolve(pollData),
+          getUserProfile(pollData.userId)
+        ])
 
-        // Fetch author info
-        const author = await getUserProfile(pollData.userId)
+        setPoll(pollData)
         if (author) {
           setAuthorName(author.displayName)
           setAuthorAvatar(author.avatarUrl || '')
@@ -46,7 +50,7 @@ export default function PollDetailPage() {
     }
 
     if (pollId) {
-      fetchPoll()
+      fetchPollData()
     }
   }, [pollId])
 
