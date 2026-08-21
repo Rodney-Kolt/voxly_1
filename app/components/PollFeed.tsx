@@ -25,12 +25,30 @@ export const PollFeed: React.FC<PollFeedProps> = ({ className = '' }) => {
 
   // Subscribe to polls with real-time updates
   useEffect(() => {
-    // Show cached polls instantly (if they exist)
-    if (pollCache.has(filter)) {
-      setPolls(pollCache.get(filter) || [])
-      hasShownCacheRef.current = true
-    } else {
-      setLoading(true)
+    // Try to load from localStorage first for instant display
+    const storageCacheKey = `voxly_polls_${filter}`
+    
+    try {
+      const savedPolls = localStorage.getItem(storageCacheKey)
+      if (savedPolls) {
+        const parsedPolls = JSON.parse(savedPolls)
+        setPolls(parsedPolls)
+        hasShownCacheRef.current = true
+      } else if (pollCache.has(filter)) {
+        // Fallback to in-memory cache
+        setPolls(pollCache.get(filter) || [])
+        hasShownCacheRef.current = true
+      } else {
+        setLoading(true)
+      }
+    } catch (e) {
+      console.warn('Failed to load from localStorage:', e)
+      if (pollCache.has(filter)) {
+        setPolls(pollCache.get(filter) || [])
+        hasShownCacheRef.current = true
+      } else {
+        setLoading(true)
+      }
     }
     
     setError(null)
@@ -101,8 +119,16 @@ export const PollFeed: React.FC<PollFeedProps> = ({ className = '' }) => {
           pollsData.sort((a, b) => (b.totalVotes || 0) - (a.totalVotes || 0))
         }
 
-        // Cache the results for instant loading on next visit
+        // Cache in memory
         pollCache.set(filter, pollsData)
+        
+        // Also save to localStorage for persistence
+        const storageCacheKey = `voxly_polls_${filter}`
+        try {
+          localStorage.setItem(storageCacheKey, JSON.stringify(pollsData))
+        } catch (e) {
+          console.warn('Failed to save to localStorage:', e)
+        }
         
         setPolls(pollsData)
         setLoading(false)
