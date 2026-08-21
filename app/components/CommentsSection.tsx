@@ -8,7 +8,6 @@ import {
   subscribeToComments,
   deleteComment,
   Comment as CommentType,
-  formatDate,
 } from '@/lib/firestore'
 import { Trash2 } from 'lucide-react'
 import { CommentItem } from './CommentItem'
