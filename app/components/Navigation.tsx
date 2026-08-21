@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useAuth } from '@/app/context/AuthContext'
 import { signInWithPopup } from 'firebase/auth'
 import { auth, googleProvider } from '@/lib/firebase'
-import { Menu, X, Zap } from 'lucide-react'
+import { Menu, X, Plus } from 'lucide-react'
 
 export const Navigation: React.FC = () => {
   const { user, loading } = useAuth()
@@ -13,8 +13,7 @@ export const Navigation: React.FC = () => {
 
   const handleGoogleSignIn = async () => {
     try {
-      const result = await signInWithPopup(auth, googleProvider)
-      console.log('Signed in as:', result.user.displayName)
+      await signInWithPopup(auth, googleProvider)
       setMobileMenuOpen(false)
     } catch (error) {
       console.error('Sign-in error:', error)
@@ -22,63 +21,52 @@ export const Navigation: React.FC = () => {
   }
 
   return (
-    <nav className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+    <nav className="fixed top-0 left-0 right-0 bg-voxly-bg/95 backdrop-blur-sm border-b border-voxly-border z-50">
+      <div className="max-w-7xl mx-auto px-4 md:px-6">
+        <div className="flex justify-between items-center h-20 md:h-24">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 font-bold text-2xl text-secondary hover:text-primary transition">
-            <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center text-white text-sm font-bold">
+          <Link href="/" className="flex items-center gap-3 font-serif text-2xl md:text-3xl text-voxly-text hover:text-voxly-accent transition">
+            <div className="w-8 h-8 bg-voxly-accent rounded-lg flex items-center justify-center text-voxly-bg text-sm font-bold">
               V
             </div>
-            <span>Voxly</span>
+            <span className="hidden sm:inline">Voxly</span>
           </Link>
 
-          {/* Desktop Menu */}
-          <div className="hidden md:flex items-center gap-8">
-            <Link href="/#polls" className="text-gray-700 hover:text-primary transition">
-              Polls
-            </Link>
-            <Link href="/#features" className="text-gray-700 hover:text-primary transition">
-              Features
-            </Link>
-            <Link href="/#how-it-works" className="text-gray-700 hover:text-primary transition">
-              How it Works
-            </Link>
-          </div>
+          {/* Desktop Menu - Center (empty for now, tabs will be in PollFeed) */}
+          <div className="hidden md:flex items-center gap-8" />
 
-          {/* Right side - Auth & Actions */}
-          <div className="hidden md:flex items-center gap-4">
+          {/* Right side - Auth & Create */}
+          <div className="hidden md:flex items-center gap-6">
             {loading ? (
-              <div className="h-10 w-10 bg-gray-200 rounded-full animate-pulse" />
+              <div className="h-10 w-24 bg-voxly-border rounded animate-pulse" />
             ) : user ? (
               <div className="flex items-center gap-4">
                 <Link
                   href="/create"
-                  className="px-4 py-2 bg-gradient-primary text-white rounded-lg font-medium hover:opacity-90 transition flex items-center gap-2"
+                  className="inline-flex items-center gap-2 px-4 py-2 border border-voxly-accent text-voxly-accent hover:bg-voxly-accent/10 rounded-full font-medium transition-colors duration-200"
                 >
-                  <Zap size={18} />
+                  <Plus size={18} />
                   Create Poll
                 </Link>
                 <Link
                   href="/profile"
-                  className="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-gray-100 transition"
+                  className="flex items-center gap-2 px-3 py-2 rounded-full hover:bg-voxly-card transition"
                 >
                   {user.photoURL && (
                     <img
                       src={user.photoURL}
                       alt={user.displayName || 'User'}
-                      className="w-8 h-8 rounded-full"
+                      className="w-8 h-8 rounded-full border border-voxly-border"
                     />
                   )}
-                  <span className="text-sm font-medium text-gray-700">{user.displayName}</span>
                 </Link>
               </div>
             ) : (
               <button
                 onClick={handleGoogleSignIn}
-                className="px-6 py-2 bg-gradient-primary text-white rounded-lg font-medium hover:opacity-90 transition"
+                className="px-4 py-2 border border-voxly-accent text-voxly-accent hover:bg-voxly-accent/10 rounded-full font-medium transition-colors duration-200"
               >
-                Sign in with Google
+                Sign In
               </button>
             )}
           </div>
@@ -86,7 +74,7 @@ export const Navigation: React.FC = () => {
           {/* Mobile menu button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden text-gray-700"
+            className="md:hidden text-voxly-text hover:text-voxly-accent transition"
           >
             {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
@@ -94,52 +82,34 @@ export const Navigation: React.FC = () => {
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden pb-4 border-t border-gray-200">
-            <div className="flex flex-col gap-4 py-4">
-              <Link href="/#polls" className="text-gray-700 hover:text-primary transition px-4">
-                Polls
-              </Link>
-              <Link href="/#features" className="text-gray-700 hover:text-primary transition px-4">
-                Features
-              </Link>
-              <Link href="/#how-it-works" className="text-gray-700 hover:text-primary transition px-4">
-                How it Works
-              </Link>
-              <div className="px-4 pt-2 border-t border-gray-200">
-                {loading ? (
-                  <div className="h-10 w-20 bg-gray-200 rounded-lg animate-pulse" />
-                ) : user ? (
-                  <div className="flex flex-col gap-3">
-                    <Link
-                      href="/create"
-                      className="px-4 py-2 bg-gradient-primary text-white rounded-lg font-medium hover:opacity-90 transition flex items-center gap-2 justify-center"
-                    >
-                      <Zap size={18} />
-                      Create Poll
-                    </Link>
-                    <Link
-                      href="/profile"
-                      className="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-gray-100 transition"
-                    >
-                      {user.photoURL && (
-                        <img
-                          src={user.photoURL}
-                          alt={user.displayName || 'User'}
-                          className="w-8 h-8 rounded-full"
-                        />
-                      )}
-                      <span className="text-sm font-medium text-gray-700">{user.displayName}</span>
-                    </Link>
-                  </div>
-                ) : (
-                  <button
-                    onClick={handleGoogleSignIn}
-                    className="w-full px-4 py-2 bg-gradient-primary text-white rounded-lg font-medium hover:opacity-90 transition"
+          <div className="md:hidden pb-4 border-t border-voxly-border">
+            <div className="flex flex-col gap-3 py-4">
+              {loading ? (
+                <div className="h-10 w-full bg-voxly-border rounded animate-pulse" />
+              ) : user ? (
+                <div className="flex flex-col gap-3">
+                  <Link
+                    href="/create"
+                    className="px-4 py-2 border border-voxly-accent text-voxly-accent hover:bg-voxly-accent/10 rounded-full font-medium flex items-center gap-2 justify-center transition-colors"
                   >
-                    Sign in with Google
-                  </button>
-                )}
-              </div>
+                    <Plus size={18} />
+                    Create Poll
+                  </Link>
+                  <Link
+                    href="/profile"
+                    className="px-4 py-2 text-voxly-text hover:text-voxly-accent transition text-center"
+                  >
+                    Profile
+                  </Link>
+                </div>
+              ) : (
+                <button
+                  onClick={handleGoogleSignIn}
+                  className="px-4 py-2 border border-voxly-accent text-voxly-accent hover:bg-voxly-accent/10 rounded-full font-medium transition-colors"
+                >
+                  Sign In
+                </button>
+              )}
             </div>
           </div>
         )}
