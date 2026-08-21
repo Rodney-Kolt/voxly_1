@@ -239,9 +239,14 @@ export async function getUserPolls(userId: string): Promise<Poll[]> {
     const snapshot = await getDocs(q)
     const polls: Poll[] = []
 
-    for (const docSnap of snapshot.docs) {
+    // Fetch all vote counts in parallel instead of sequentially (fixes N+1 query issue)
+    const voteCountsPromises = snapshot.docs.map((docSnap) =>
+      getVoteCount(docSnap.id)
+    )
+    const voteCounts = await Promise.all(voteCountsPromises)
+
+    snapshot.docs.forEach((docSnap, index) => {
       const data = docSnap.data()
-      const voteCount = await getVoteCount(docSnap.id)
       polls.push({
         id: docSnap.id,
         userId: data.userId,
@@ -250,9 +255,9 @@ export async function getUserPolls(userId: string): Promise<Poll[]> {
         imageUrl: data.imageUrl,
         closesAt: data.closesAt,
         createdAt: data.createdAt,
-        totalVotes: voteCount,
+        totalVotes: voteCounts[index],
       })
-    }
+    })
 
     return polls
   } catch (error) {
@@ -732,9 +737,14 @@ export async function getAllBoostedPolls(limitCount: number = 50): Promise<Poll[
     const snapshot = await getDocs(q)
     const polls: Poll[] = []
 
-    for (const docSnap of snapshot.docs) {
+    // Fetch all vote counts in parallel instead of sequentially (fixes N+1 query issue)
+    const voteCountsPromises = snapshot.docs.map((docSnap) =>
+      getVoteCount(docSnap.id)
+    )
+    const voteCounts = await Promise.all(voteCountsPromises)
+
+    snapshot.docs.forEach((docSnap, index) => {
       const data = docSnap.data()
-      const voteCount = await getVoteCount(docSnap.id)
       polls.push({
         id: docSnap.id,
         userId: data.userId,
@@ -746,13 +756,17 @@ export async function getAllBoostedPolls(limitCount: number = 50): Promise<Poll[
         isBoosted: data.isBoosted,
         boostedUntil: data.boostedUntil,
         boostedBy: data.boostedBy,
-        totalVotes: voteCount,
+        totalVotes: voteCounts[index],
       })
-    }
+    })
 
     return polls
   } catch (error) {
+    // Log error for debugging - likely missing composite index or permission denied
     console.error('Error fetching boosted polls:', error)
+    // Return empty array - UI will show "No boosted polls" instead of hanging
+    // Note: This error typically means the composite index for (isBoosted, boostedUntil) is missing
+    // See: https://console.firebase.google.com/project/voxly-c75e8/firestore/indexes/composite
     return []
   }
 }
