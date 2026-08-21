@@ -2,13 +2,17 @@
 
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { Timestamp } from 'firebase/firestore'
 import { useAuth } from '@/app/context/AuthContext'
+import { usePollContext } from '@/app/context/PollContext'
 import { createPoll } from '@/lib/firestore'
+import { Poll } from '@/lib/firestore'
 import { X, Plus } from 'lucide-react'
 
 export default function CreatePollPage() {
   const router = useRouter()
   const { user, loading } = useAuth()
+  const { addTempPoll, updatePoll, removePoll } = usePollContext()
   const [question, setQuestion] = useState('')
   const [options, setOptions] = useState(['', ''])
   const [imageUrl, setImageUrl] = useState('')
@@ -79,20 +83,54 @@ export default function CreatePollPage() {
     try {
       setIsSubmitting(true)
 
+      // Generate temporary poll with temp ID
+      const tempId = `temp_${Date.now()}`
       const closeDate = closesAt ? new Date(closesAt) : undefined
+      
+      const tempPoll: Poll = {
+        id: tempId,
+        userId: user.uid,
+        question: question.trim(),
+        options: options.map((o) => o.trim()),
+        imageUrl: imageUrl.trim() || undefined,
+        closesAt: closeDate ? Timestamp.fromDate(closeDate) : undefined,
+        createdAt: Timestamp.now(),
+        totalVotes: 0,
+        isBoosted: false,
+        boostedUntil: undefined,
+        boostedBy: undefined,
+      }
 
-      const pollId = await createPoll(
-        question.trim(),
-        options.map((o) => o.trim()),
-        imageUrl.trim() || undefined,
-        closeDate
-      )
+      // Add temporary poll to context immediately (optimistic UI)
+      addTempPoll(tempPoll)
 
-      // Redirect to poll detail page
-      router.push(`/poll/${pollId}`)
+      // Navigate to home feed immediately to show temp poll
+      router.push('/')
+
+      // Then write to Firestore in background
+      try {
+        const pollId = await createPoll(
+          question.trim(),
+          options.map((o) => o.trim()),
+          imageUrl.trim() || undefined,
+          closeDate
+        )
+
+        // Replace temporary poll with real one (use real ID and timestamps from Firestore)
+        updatePoll(tempId, {
+          id: pollId,
+        })
+      } catch (err) {
+        console.error('Failed to create poll in Firestore:', err)
+        // Rollback: remove temp poll if write fails
+        removePoll(tempId)
+        setError('Failed to save poll. Please try again.')
+        // Navigate back to create form to retry
+        router.push('/create')
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create poll')
       setIsSubmitting(false)
+      setError(err instanceof Error ? err.message : 'Failed to create poll')
     }
   }
 

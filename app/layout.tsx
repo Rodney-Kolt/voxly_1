@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { AuthProvider } from '@/app/context/AuthContext'
+import { PollProvider } from '@/app/context/PollContext'
 import { Navigation } from '@/app/components/Navigation'
 import '@/app/globals.css'
 
@@ -23,8 +24,10 @@ export default function RootLayout({
     <html lang="en">
       <body className="bg-white">
         <AuthProvider>
-          <Navigation />
-          <main>{children}</main>
+          <PollProvider>
+            <Navigation />
+            <main>{children}</main>
+          </PollProvider>
         </AuthProvider>
       </body>
     </html>

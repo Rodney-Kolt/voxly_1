@@ -6,6 +6,7 @@ import { db } from '@/lib/firebase'
 import { Poll } from '@/lib/firestore'
 import PollCard from './PollCard'
 import EmptyState from './EmptyState'
+import { usePollContext } from '@/app/context/PollContext'
 
 type FilterType = 'all' | 'new' | 'trending' | 'boosted'
 
@@ -17,6 +18,7 @@ interface PollFeedProps {
 const pollCache = new Map<FilterType, Poll[]>()
 
 export const PollFeed: React.FC<PollFeedProps> = ({ className = '' }) => {
+  const { setPolls: setContextPolls } = usePollContext()
   const [filter, setFilter] = useState<FilterType>('all')
   const [polls, setPolls] = useState<Poll[]>([])
   const [loading, setLoading] = useState(false)
@@ -131,6 +133,8 @@ export const PollFeed: React.FC<PollFeedProps> = ({ className = '' }) => {
         }
         
         setPolls(pollsData)
+        // Sync with context (for optimistic UI across all filters)
+        setContextPolls(pollsData)
         setLoading(false)
       },
       (err) => {
