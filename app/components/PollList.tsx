@@ -21,14 +21,14 @@ export const PollList: React.FC = () => {
         const pollsData = await getAllPolls(20)
 
         // Fetch author info for each poll
-        const pollsWithAuthors = await Promise.all(
+        const pollsWithAuthors: PollWithAuthor[] = await Promise.all(
           pollsData.map(async (poll) => {
             const author = await getUserProfile(poll.userId)
             return {
               ...poll,
               authorName: author?.displayName || 'Anonymous',
-              authorAvatar: author?.avatarUrl || null,
-            }
+              authorAvatar: author?.avatarUrl || undefined,
+            } as PollWithAuthor
           })
         )
 

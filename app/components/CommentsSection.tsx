@@ -9,7 +9,6 @@ import {
   deleteComment,
   Comment as CommentType,
 } from '@/lib/firestore'
-import { Trash2 } from 'lucide-react'
 import { CommentItem } from './CommentItem'
 
 interface CommentsSectionProps {

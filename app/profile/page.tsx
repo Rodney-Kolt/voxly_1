@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/app/context/AuthContext'
 import { getUserPolls, Poll, formatDate } from '@/lib/firestore'
-import { LogOut, Mail, User, BarChart3, MessageCircle } from 'lucide-react'
+import { LogOut, Mail, User, BarChart3 } from 'lucide-react'
 
 export default function ProfilePage() {
   const { user, loading, signOutUser } = useAuth()

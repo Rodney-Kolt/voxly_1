@@ -1,11 +1,13 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { Suspense, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { CheckCircle, AlertCircle, Clock } from 'lucide-react'
 
-export default function PaymentResultPage() {
+export const dynamic = 'force-dynamic'
+
+function PaymentResultContent() {
   const searchParams = useSearchParams()
   const [status, setStatus] = useState<'success' | 'cancelled' | 'pending' | null>(null)
   const [loading, setLoading] = useState(true)
@@ -17,9 +19,6 @@ export default function PaymentResultPage() {
       | 'cancelled'
       | 'pending'
       | null
-
-    // Pesapal also sends OrderTrackingId if needed
-    // const trackingId = searchParams.get('OrderTrackingId')
 
     setStatus(statusParam || 'pending')
     setLoading(false)
@@ -155,5 +154,22 @@ export default function PaymentResultPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function PaymentResultPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen pt-20 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
+          <div className="text-center">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-200 rounded-full animate-pulse mb-4" />
+            <p className="text-gray-600 font-medium">Loading...</p>
+          </div>
+        </div>
+      }
+    >
+      <PaymentResultContent />
+    </Suspense>
   )
 }

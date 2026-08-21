@@ -27,7 +27,7 @@ export const BoostedPolls: React.FC = () => {
             return {
               ...poll,
               authorName: author?.displayName || 'Anonymous',
-              authorAvatar: author?.avatarUrl || null,
+              authorAvatar: author?.avatarUrl || undefined,
             } as PollWithAuthor
           })
         )

@@ -1,5 +1,3 @@
-import crypto from 'crypto'
-
 // Pesapal configuration
 const PESAPAL_DEMO_URL = 'https://cybqa.pesapal.com/v3/api'
 const PESAPAL_LIVE_URL = 'https://pay.pesapal.com/v3/api'
@@ -231,7 +229,7 @@ export function parseMerchantReference(
  * Verify IPN signature (if Pesapal sends a signature in the request)
  */
 export function verifyIpnSignature(
-  body: string,
+  _body: string,
   pesapalSignature: string | undefined
 ): boolean {
   if (!pesapalSignature) {

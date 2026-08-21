@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
-import { useAuth } from '@/app/context/AuthContext'
 import { getPoll, getUserProfile, formatDate, getTimeRemaining, Poll, isPollClosed } from '@/lib/firestore'
 import { PollVoting } from '@/app/components/PollVoting'
 import { CommentsSection } from '@/app/components/CommentsSection'
