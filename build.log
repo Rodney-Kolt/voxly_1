@@ -1,0 +1,37 @@
+﻿
+> voxly@0.1.0 build
+> next build
+
+  Γû▓ Next.js 14.2.35
+  - Environments: .env.local
+
+   Creating an optimized production build ...
+ Γ£ô Compiled successfully
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/9) ...
+   Generating static pages (2/9) 
+   Generating static pages (4/9) 
+   Generating static pages (6/9) 
+ Γ£ô Generating static pages (9/9)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                              Size     First Load JS
+Γöî ╞Æ /                                    3.41 kB         229 kB
+Γö£ Γùï /_not-found                          873 B          88.2 kB
+Γö£ Γùï /admin/seed                          2.31 kB         222 kB
+Γö£ Γùï /create                              2.76 kB         222 kB
+Γö£ Γùï /dashboard                           3.1 kB          232 kB
+Γö£ Γùï /payment/result                      1.79 kB        98.2 kB
+Γö£ ╞Æ /poll/[pollId]                       4.85 kB         233 kB
+Γöö Γùï /profile                             2.21 kB         231 kB
++ First Load JS shared by all            87.3 kB
+  Γö£ chunks/117-6fdc9dc9fd0b7424.js       31.7 kB
+  Γö£ chunks/fd9d1056-78e27b040817fd23.js  53.6 kB
+  Γöö other shared chunks (total)          1.95 kB
+
+
+Γùï  (Static)   prerendered as static content
+╞Æ  (Dynamic)  server-rendered on demand
+

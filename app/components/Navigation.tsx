@@ -13,6 +13,10 @@ export const Navigation: React.FC = () => {
 
   const handleGoogleSignIn = async () => {
     try {
+      if (!auth) {
+        console.error('Firebase not initialized')
+        return
+      }
       await signInWithPopup(auth, googleProvider)
       setMobileMenuOpen(false)
     } catch (error) {

@@ -12,6 +12,7 @@ import {
   limit,
   Timestamp,
   onSnapshot,
+  Firestore,
 } from 'firebase/firestore'
 import { auth, db } from '@/lib/firebase'
 
@@ -83,9 +84,9 @@ export interface Payment {
 
 export async function createOrUpdateUser(user: any) {
   try {
-    if (!user) return
+    if (!user || !db) return
 
-    const userRef = doc(db, 'users', user.uid)
+    const userRef = doc(db as Firestore, 'users', user.uid)
     const userSnapshot = await getDoc(userRef)
 
     if (!userSnapshot.exists()) {
@@ -96,7 +97,7 @@ export async function createOrUpdateUser(user: any) {
         createdAt: Timestamp.now(),
       }).catch(async () => {
         // If doc doesn't exist, create it
-        await addDoc(collection(db, 'users'), {
+        await addDoc(collection(db as Firestore, 'users'), {
           uid: user.uid,
           email: user.email,
           displayName: user.displayName,
@@ -119,6 +120,7 @@ export async function createOrUpdateUser(user: any) {
 
 export async function getUserProfile(userId: string): Promise<UserProfile | null> {
   try {
+    if (!db) return null
     const userRef = doc(db, 'users', userId)
     const userSnapshot = await getDoc(userRef)
 
@@ -149,6 +151,8 @@ export async function createPoll(
   closesAt?: Date
 ): Promise<string> {
   try {
+    if (!db) throw new Error('Firebase not initialized')
+    if (!auth) throw new Error('Firebase not initialized')
     const currentUser = auth.currentUser
     if (!currentUser) throw new Error('User not authenticated')
 
@@ -171,6 +175,7 @@ export async function createPoll(
 
 export async function getPoll(pollId: string): Promise<Poll | null> {
   try {
+    if (!db) return null
     const pollRef = doc(db, 'polls', pollId)
     const pollSnapshot = await getDoc(pollRef)
 
@@ -197,6 +202,7 @@ export async function getPoll(pollId: string): Promise<Poll | null> {
 
 export async function getAllPolls(limitCount: number = 50): Promise<Poll[]> {
   try {
+    if (!db) return []
     const q = query(
       collection(db, 'polls'),
       orderBy('createdAt', 'desc'),
@@ -233,6 +239,7 @@ export async function getAllPolls(limitCount: number = 50): Promise<Poll[]> {
 
 export async function getUserPolls(userId: string): Promise<Poll[]> {
   try {
+    if (!db) return []
     const q = query(
       collection(db, 'polls'),
       where('userId', '==', userId),
@@ -274,6 +281,10 @@ export function subscribeToPoll(
   callback: (poll: Poll | null) => void
 ) {
   try {
+    if (!db) {
+      callback(null)
+      return () => {}
+    }
     const pollRef = doc(db, 'polls', pollId)
 
     const unsubscribe = onSnapshot(pollRef, async (snapshot) => {
@@ -307,6 +318,7 @@ export function subscribeToPoll(
 
 export async function getVoteCount(pollId: string): Promise<number> {
   try {
+    if (!db) return 0
     const q = query(
       collection(db, 'votes'),
       where('pollId', '==', pollId)
@@ -324,6 +336,7 @@ export async function getUserVoteForPoll(
   userId: string
 ): Promise<Vote | null> {
   try {
+    if (!db) return null
     const q = query(
       collection(db, 'votes'),
       where('pollId', '==', pollId),
@@ -350,6 +363,7 @@ export async function getUserVoteForPoll(
 
 export async function getVotesByOption(pollId: string): Promise<number[]> {
   try {
+    if (!db) return []
     const q = query(
       collection(db, 'votes'),
       where('pollId', '==', pollId)
@@ -379,6 +393,10 @@ export function subscribeToVotes(
   callback: (votes: number[]) => void
 ) {
   try {
+    if (!db) {
+      callback([])
+      return () => {}
+    }
     const q = query(
       collection(db, 'votes'),
       where('pollId', '==', pollId)
@@ -410,6 +428,8 @@ export async function castVote(
   optionIndex: number
 ): Promise<boolean> {
   try {
+    if (!db) throw new Error('Firebase not initialized')
+    if (!auth) throw new Error('Firebase not initialized')
     const currentUser = auth.currentUser
     if (!currentUser) throw new Error('User not authenticated')
 
@@ -438,6 +458,8 @@ export async function castVote(
 
 export async function postComment(pollId: string, body: string): Promise<string> {
   try {
+    if (!db) throw new Error('Firebase not initialized')
+    if (!auth) throw new Error('Firebase not initialized')
     const currentUser = auth.currentUser
     if (!currentUser) throw new Error('User not authenticated')
 
@@ -461,6 +483,7 @@ export async function postComment(pollId: string, body: string): Promise<string>
 
 export async function getComments(pollId: string): Promise<Comment[]> {
   try {
+    if (!db) return []
     const q = query(
       collection(db, 'comments'),
       where('pollId', '==', pollId),
@@ -495,6 +518,10 @@ export function subscribeToComments(
   callback: (comments: Comment[]) => void
 ) {
   try {
+    if (!db) {
+      callback([])
+      return () => {}
+    }
     const q = query(
       collection(db, 'comments'),
       where('pollId', '==', pollId),
@@ -529,6 +556,8 @@ export function subscribeToComments(
 
 export async function deleteComment(commentId: string): Promise<void> {
   try {
+    if (!db) throw new Error('Firebase not initialized')
+    if (!auth) throw new Error('Firebase not initialized')
     const currentUser = auth.currentUser
     if (!currentUser) throw new Error('User not authenticated')
 
@@ -558,6 +587,7 @@ export async function getUserReactionForComment(
   userId: string
 ): Promise<CommentReaction | null> {
   try {
+    if (!db) return null
     const q = query(
       collection(db, 'commentReactions'),
       where('commentId', '==', commentId),
@@ -586,6 +616,7 @@ export async function getReactionCounts(
   commentId: string
 ): Promise<{ likes: number; dislikes: number }> {
   try {
+    if (!db) return { likes: 0, dislikes: 0 }
     const q = query(
       collection(db, 'commentReactions'),
       where('commentId', '==', commentId)
@@ -616,6 +647,10 @@ export function subscribeToReactions(
   callback: (counts: { likes: number; dislikes: number }) => void
 ) {
   try {
+    if (!db) {
+      callback({ likes: 0, dislikes: 0 })
+      return () => {}
+    }
     const q = query(
       collection(db, 'commentReactions'),
       where('commentId', '==', commentId)
@@ -649,6 +684,8 @@ export async function toggleReaction(
   type: 'like' | 'dislike'
 ): Promise<void> {
   try {
+    if (!db) throw new Error('Firebase not initialized')
+    if (!auth) throw new Error('Firebase not initialized')
     const currentUser = auth.currentUser
     if (!currentUser) throw new Error('User not authenticated')
 
@@ -728,6 +765,7 @@ export function getTimeRemaining(closesAt?: Timestamp): string {
 
 export async function getAllBoostedPolls(limitCount: number = 50): Promise<Poll[]> {
   try {
+    if (!db) return []
     const now = new Date()
     const q = query(
       collection(db, 'polls'),

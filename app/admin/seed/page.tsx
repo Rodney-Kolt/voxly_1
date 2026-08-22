@@ -44,6 +44,10 @@ export default function SeedDataPage() {
 
   const createSamplePoll = async () => {
     try {
+      if (!db) {
+        setError('Firebase not initialized')
+        return
+      }
       setLoading(true)
       setError(null)
       setSuccess(false)

@@ -12,6 +12,10 @@ export const Hero: React.FC = () => {
 
   const handleGoogleSignIn = async () => {
     try {
+      if (!auth) {
+        console.error('Firebase not initialized')
+        return
+      }
       await signInWithPopup(auth, googleProvider)
     } catch (error) {
       console.error('Sign-in error:', error)

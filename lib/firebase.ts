@@ -1,4 +1,4 @@
-import { initializeApp } from 'firebase/app'
+import { initializeApp, getApps, getApp } from 'firebase/app'
 import { getAuth, GoogleAuthProvider, setPersistence, browserLocalPersistence } from 'firebase/auth'
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore'
 
@@ -11,20 +11,31 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 }
 
-const app = initializeApp(firebaseConfig)
-export const auth = getAuth(app)
+// Only initialize Firebase if we have a valid API key
+// This prevents errors during static generation when env vars may not be available
+const app = !getApps().length && firebaseConfig.apiKey
+  ? initializeApp(firebaseConfig)
+  : getApps().length
+    ? getApp()
+    : null
+
+export const auth = app ? getAuth(app) : null
 
 // Initialize Firestore with persistent offline cache and multi-tab support
-export const db = initializeFirestore(app, {
-  localCache: persistentLocalCache({
-    tabManager: persistentMultipleTabManager(),
-  }),
-})
+export const db = app
+  ? initializeFirestore(app, {
+      localCache: persistentLocalCache({
+        tabManager: persistentMultipleTabManager(),
+      }),
+    })
+  : null
 
 // Set persistence to LOCAL so user stays signed in
-setPersistence(auth, browserLocalPersistence).catch((error) => {
-  console.error('Failed to set persistence:', error)
-})
+if (auth) {
+  setPersistence(auth, browserLocalPersistence).catch((error) => {
+    console.error('Failed to set persistence:', error)
+  })
+}
 
 // Configure Google Auth Provider
 export const googleProvider = new GoogleAuthProvider()

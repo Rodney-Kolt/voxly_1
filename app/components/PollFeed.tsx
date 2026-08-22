@@ -27,6 +27,13 @@ export const PollFeed: React.FC<PollFeedProps> = ({ className = '' }) => {
 
   // Subscribe to polls with real-time updates
   useEffect(() => {
+    // If Firebase is not initialized, don't try to fetch
+    if (!db) {
+      setLoading(false)
+      setError('Firebase not initialized')
+      return
+    }
+
     // Try to load from localStorage first for instant display
     const storageCacheKey = `voxly_polls_${filter}`
     
