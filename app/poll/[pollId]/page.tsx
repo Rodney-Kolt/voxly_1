@@ -4,7 +4,8 @@ import { PollDetailClient } from './PollDetailClient'
 // Skip pre-rendering - load dynamically on request
 export const dynamic = 'force-dynamic'
 
-export default function PollDetailPage({ params }: { params: { pollId: string } }) {
+export default async function PollDetailPage({ params }: { params: Promise<{ pollId: string }> }) {
+  const { pollId } = await params
   return (
     <Suspense fallback={
       <div className="min-h-screen pt-20 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
@@ -14,7 +15,7 @@ export default function PollDetailPage({ params }: { params: { pollId: string } 
         </div>
       </div>
     }>
-      <PollDetailClient pollId={params.pollId} />
+      <PollDetailClient pollId={pollId} />
     </Suspense>
   )
 }
