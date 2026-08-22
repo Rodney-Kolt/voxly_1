@@ -10,6 +10,9 @@ import {
 } from 'firebase/firestore'
 import { useRouter } from 'next/navigation'
 
+// Skip pre-rendering for client components with Firebase
+export const dynamic = 'force-dynamic'
+
 export default function SeedDataPage() {
   const { user } = useAuth()
   const router = useRouter()

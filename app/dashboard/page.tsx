@@ -6,6 +6,9 @@ import { useAuth } from '@/app/context/AuthContext'
 import { getUserPolls, Poll, isPollClosed } from '@/lib/firestore'
 import { MobileDashboard } from '@/app/components/MobileDashboard'
 
+// Skip pre-rendering for client components with Firebase
+export const dynamic = 'force-dynamic'
+
 export default function DashboardPage() {
   const { user, loading } = useAuth()
   const router = useRouter()

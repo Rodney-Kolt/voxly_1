@@ -7,6 +7,9 @@ import { useAuth } from '@/app/context/AuthContext'
 import { getUserPolls, Poll, formatDate } from '@/lib/firestore'
 import { LogOut, Mail, User, BarChart3 } from 'lucide-react'
 
+// Skip pre-rendering for client components with Firebase
+export const dynamic = 'force-dynamic'
+
 export default function ProfilePage() {
   const { user, loading, signOutUser } = useAuth()
   const router = useRouter()

@@ -9,6 +9,9 @@ import { createPoll } from '@/lib/firestore'
 import { Poll } from '@/lib/firestore'
 import { X, Plus } from 'lucide-react'
 
+// Skip pre-rendering for client components with Firebase
+export const dynamic = 'force-dynamic'
+
 export default function CreatePollPage() {
   const router = useRouter()
   const { user, loading } = useAuth()

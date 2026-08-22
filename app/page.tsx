@@ -1,5 +1,9 @@
 import { PollFeed } from '@/app/components/PollFeed'
 
+// Skip pre-rendering - load dynamically on request
+// This avoids Firebase errors during build
+export const dynamic = 'force-dynamic'
+
 export default function Home() {
   return (
     <main className="min-h-screen bg-voxly-bg">
