@@ -35,7 +35,7 @@ A modern, responsive polling platform with real-time voting, discussions, and mo
 - **Database:** Firestore
 - **Payments:** Pesapal API v3
 - **Icons:** Lucide React
-- **Deployment:** Vercel
+- **Deployment:** Cloudflare Pages
 
 ## Project Structure
 
@@ -214,33 +214,35 @@ See `.env.local.example` for complete list.
 
 ## Deployment
 
-### Deploy to Vercel
+### Deploy to Cloudflare Pages (Recommended)
 
-1. **Push to GitHub**
-   ```bash
-   git add .
-   git commit -m "Add Pesapal V3 integration"
-   git push origin main
-   ```
+Voxly is now optimized for Cloudflare Pages with hybrid rendering support.
 
-2. **Create Vercel Project**
-   - Go to vercel.com
-   - Import your GitHub repository
-   - Click "Continue"
+**Full deployment guide:** `CLOUDFLARE_PAGES_DEPLOYMENT.md`
 
-3. **Add Environment Variables**
-   In Vercel dashboard > Settings > Environment Variables:
-   - Add all variables from `.env.local`
-   - Use production Pesapal credentials (not demo)
+Quick steps:
+1. Push your code to GitHub
+2. Go to Cloudflare Dashboard > Workers & Pages > Pages
+3. Click "Connect to Git" and select your Voxly repository
+4. Set build command: `npm run build`
+5. Set build output directory: `.next`
+6. Add environment variables (see below)
+7. Deploy!
 
-4. **Configure Firebase**
-   - Add your Vercel domain to Firebase > Authentication > Authorized domains
+**Environment variables to add in Cloudflare:**
+```
+NEXT_PUBLIC_FIREBASE_API_KEY=
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
+NEXT_PUBLIC_FIREBASE_APP_ID=
+NEXT_PUBLIC_URL=https://your-domain.com
+```
 
-5. **Register Production IPN**
-   - In Pesapal Console > Live environment
-   - Register IPN URL: `https://yourdomain.com/api/pesapal/ipn`
+### Alternative: Deploy to Vercel
 
-**Full deployment guide:** `V3_SETUP_GUIDE.md` → Production Deployment
+If you prefer Vercel, see the legacy deployment guide (not actively maintained).
 
 ---
 

@@ -13,6 +13,15 @@
 # production
 /build
 
+# Vercel (removed - using Cloudflare Pages instead)
+.vercel
+vercel.json
+.vercelignore
+
+# Cloudflare Pages
+/functions/
+wrangler.toml
+
 # misc
 .DS_Store
 *.pem
