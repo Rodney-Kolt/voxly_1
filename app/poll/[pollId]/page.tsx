@@ -1,6 +1,9 @@
 import React, { Suspense } from 'react'
 import { PollDetailClient } from './PollDetailClient'
 
+// Skip pre-rendering - load dynamically on request
+export const dynamic = 'force-dynamic'
+
 export default function PollDetailPage({ params }: { params: { pollId: string } }) {
   return (
     <Suspense fallback={
