@@ -1,20 +1,22 @@
 {
+  "$schema": "node_modules/wrangler/config-schema.json",
   "name": "voxly",
-  "compatibility_date": "2026-08-22",
+  "compatibility_date": "2026-08-20",
+  "main": ".open-next/worker.js",
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
   "observability": {
     "enabled": true
   },
-  "env": {
-    "production": {
-      "vars": {
-        "NEXT_PUBLIC_FIREBASE_API_KEY": "AIzaSyB_-HshVbfifw42ACFf5l1RLKBM9Pdurng",
-        "NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN": "voxly-c75e8.firebaseapp.com",
-        "NEXT_PUBLIC_FIREBASE_PROJECT_ID": "voxly-c75e8",
-        "NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET": "voxly-c75e8.firebasestorage.app",
-        "NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "682251077393",
-        "NEXT_PUBLIC_FIREBASE_APP_ID": "1:682251077393:web:9e804159c92540b219eeb0",
-        "NEXT_PUBLIC_URL": "https://voxly.nenlink.online"
-      }
-    }
+  "vars": {
+    "NEXT_PUBLIC_FIREBASE_API_KEY": "AIzaSyB_-HshVbfifw42ACFf5l1RLKBM9Pdurng",
+    "NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN": "voxly-c75e8.firebaseapp.com",
+    "NEXT_PUBLIC_FIREBASE_PROJECT_ID": "voxly-c75e8",
+    "NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET": "voxly-c75e8.firebasestorage.app",
+    "NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "682251077393",
+    "NEXT_PUBLIC_FIREBASE_APP_ID": "1:682251077393:web:9e804159c92540b219eeb0",
+    "NEXT_PUBLIC_URL": "https://nenlink.online"
   }
 }
